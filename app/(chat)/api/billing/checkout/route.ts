@@ -1,53 +1,49 @@
-import { NextResponse } from 'next/server';
+import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 
-import { PLANS } from '@/lib/billing/plans';
-import type { BillingPlan } from '@/lib/billing/types';
+import { getPlanById } from '@/lib/billing/plans';
 import { STRIPE_SECRET_KEY } from '@/lib/env';
+import { db, user } from '@/lib/db';
 
 const stripe = new Stripe(STRIPE_SECRET_KEY);
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { planId, customerEmail } = body as {
-      planId: string;
-      customerEmail?: string;
-    };
+  const { planId, userId } = await req.json();
 
-    if (!planId) {
-      return NextResponse.json({ error: 'Missing planId' }, { status: 400 });
-    }
+  // Fetch user from DB
+  const users = await db.select().from(user).where(eq(user.id, userId));
+  const userData = users[0];
 
-    const plan: BillingPlan | undefined = PLANS.find((p) => p.id === planId);
-
-    if (!plan) {
-      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      mode: plan.isSubscription ? 'subscription' : 'payment',
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: plan.priceId,
-          quantity: 1,
-        },
-      ],
-      customer_email: customerEmail,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing/cancel`,
-      metadata: {
-        planId: plan.id,
-      },
-    });
-
-    return NextResponse.json({ url: session.url });
-  } catch (error) {
-    console.error('Stripe checkout error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create checkout session' },
-      { status: 500 },
-    );
+  if (!userData) {
+    return new Response('User not found', { status: 404 });
   }
+
+  // Get the plan
+  const plan = getPlanById(planId);
+  if (!plan) {
+    return new Response('Plan not found', { status: 404 });
+  }
+
+  // Create Stripe customer
+  const customer = await stripe.customers.create({
+    email: userData.email,
+    metadata: {
+      userId: userData.id,
+    },
+  });
+
+  const session = await stripe.checkout.sessions.create({
+    mode: plan.isSubscription ? 'subscription' : 'payment',
+    customer: customer.id,
+    line_items: [
+      {
+        price: plan.priceId,
+        quantity: 1,
+      },
+    ],
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cancel`,
+  });
+
+  return Response.json({ url: session.url });
 }

@@ -15,6 +15,10 @@ export const user = pgTable('User', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
+  stripe_customer_id: varchar('stripe_customer_id', { length: 255 }),
+  subscription_status: varchar('subscription_status', { length: 64 }),
+  current_period_end: timestamp('current_period_end'),
+  has_lifetime_access: boolean('has_lifetime_access').default(false),
 });
 
 import {
