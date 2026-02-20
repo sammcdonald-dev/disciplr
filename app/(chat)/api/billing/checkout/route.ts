@@ -1,3 +1,20 @@
+/**
+ * CHECKOUT ROUTE
+ *
+ * Purpose:
+ * Creates a Stripe Checkout Session for a logged-in user.
+ *
+ * What it does:
+ * - Receives { planId, userId } from frontend
+ * - Ensures the user has a Stripe customer (creates one if missing)
+ * - Stores stripe_customer_id in the database
+ * - Creates a Stripe Checkout Session (subscription or one-time)
+ * - Returns the Stripe-hosted checkout URL
+ *
+ * Important:
+ * Access is only granted by the webhook route after Stripe confirms payment.
+ */
+
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 

@@ -1,3 +1,21 @@
+/**
+ * BILLING PORTAL ROUTE
+ *
+ * Purpose:
+ * Creates a Stripe Billing Portal session for a user.
+ *
+ * What it does:
+ * - Receives { userId }
+ * - Retrieves user's stripe_customer_id
+ * - Creates Stripe Billing Portal session
+ * - Returns portal URL
+ *
+ * Stripe handles:
+ * - Canceling subscriptions
+ * - Updating payment methods
+ * - Viewing invoices
+ */
+
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 import { STRIPE_SECRET_KEY, APP_URL } from '@/lib/env';

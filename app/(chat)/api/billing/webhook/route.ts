@@ -1,3 +1,26 @@
+/**
+ * WEBHOOK ROUTE
+ *
+ * Purpose:
+ * Processes Stripe events and updates billing state in the database.
+ *
+ * What it does:
+ * - Verifies Stripe webhook signature using STRIPE_WEBHOOK_SECRET
+ * - Listens to key events:
+ *   - checkout.session.completed
+ *   - invoice.payment_succeeded
+ *   - customer.subscription.deleted
+ * - Updates user billing fields:
+ *   - subscription_status
+ *   - current_period_end
+ *   - has_lifetime_access
+ *
+ * This is the ONLY place where access is granted or revoked.
+ * If this route fails, billing state will be incorrect.
+ *
+ * Stripe retries events if we do not return HTTP 200.
+ */
+
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
@@ -154,7 +177,7 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // You might want to handle more events like 'customer.subscription.updated'
+      // Might want to handle more events like 'customer.subscription.updated'
       // for things like plan changes, pauses, etc.
     }
 
