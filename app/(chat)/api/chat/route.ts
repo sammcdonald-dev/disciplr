@@ -8,6 +8,7 @@ import {
 } from 'ai';
 import { auth, type UserType } from '@/app/(auth)/auth';
 import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
+import { sql } from 'drizzle-orm';
 import {
   createStreamId,
   deleteChatById,
@@ -40,6 +41,9 @@ import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import type { LanguageModelId } from '@/lib/ai/providers';
 import { cookies } from 'next/headers';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { db } from '@/lib/db';
+import { GoogleGenAI } from '@google/genai';
 
 // Get selected persona from cookie
 async function getSelectedPersonaId(): Promise<string | undefined> {
@@ -47,11 +51,63 @@ async function getSelectedPersonaId(): Promise<string | undefined> {
   return cookieStore.get('bible-chat')?.value;
 }
 
-// Placeholder: Retrieve relevant Bible passages or commentary
 async function retrieveBibleContext(userMessage: string): Promise<string> {
-  // TODO: Replace with real DB/vector store lookup
-  // Example: query Postgres or pgvector for most relevant verses
-  return `Relevant Bible passages:\n- John 3:16\n- Psalm 23:1`;
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey) {
+    console.warn(
+      'GOOGLE_GENERATIVE_AI_API_KEY is not set; skipping embedding.',
+    );
+    return '';
+  }
+
+  const newGenAI = new GoogleGenAI({
+    apiKey: apiKey,
+  });
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+
+  // 1. Embed the user message
+  const result = await newGenAI.models.embedContent({
+    model: 'text-embedding-004',
+    contents: userMessage,
+  });
+
+  const embedding = result.embeddings?.[0];
+
+  if (!embedding) {
+    throw new Error('Embedding generation failed');
+  }
+
+  const userEmbedding = result.embeddings?.[0].values ?? [];
+  if (!userEmbedding) {
+    console.warn('Could not embed user message');
+    return '';
+  }
+
+  // 2. Query for top-5 most similar verses using vector distance
+  const vectorLiteral = `[${userEmbedding.join(',')}]`;
+  const verses = await db.execute(sql`
+  SELECT book, chapter, verse, text,
+         (embedding <-> ${vectorLiteral}::vector) AS distance
+  FROM bible_verses
+  WHERE embedding IS NOT NULL
+  ORDER BY distance ASC
+  LIMIT 5
+`);
+
+  // 3. Format and return as context string
+  if (!verses || verses.length === 0) {
+    return 'No relevant Bible passages found.';
+  }
+
+  const context = verses
+    .map(
+      (row: any, i: number) =>
+        `[${i + 1}] ${row.book} ${row.chapter}:${row.verse}\n"${row.text}"`,
+    )
+    .join('\n\n');
+
+  return `Relevant Bible Passages:\n${context}`;
 }
 
 // TransformStream to enforce guardrails
@@ -160,12 +216,11 @@ export async function POST(request: Request) {
     }
     // ----- RAG step: enrich with Bible context -----
     const firstPart = message.parts[0];
-    const bibleContext =
-      firstPart.type === 'text'
-        ? await retrieveBibleContext(
-            (firstPart as { type: 'text'; text: string }).text,
-          )
-        : '';
+    const bibleContext = firstPart.type === 'text';
+    // ? await retrieveBibleContext(
+    //     (firstPart as { type: 'text'; text: string }).text,
+    //   )
+    //: '';
 
     // looks for chat by id - if not found,
     // creates new chat with title generated from first user message
