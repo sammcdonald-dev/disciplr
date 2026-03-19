@@ -79,23 +79,55 @@ const groupChatsByDate = (chats: Chat[]): GroupedChats => {
 export function getChatHistoryPaginationKey(
   pageIndex: number,
   previousPageData: ChatHistory,
+  personaId?: string,
 ) {
   if (previousPageData && previousPageData.hasMore === false) {
     return null;
   }
 
-  if (pageIndex === 0) return `/api/history?limit=${PAGE_SIZE}`;
+  const personaParam = personaId ? `&persona_id=${personaId}` : '';
+
+  if (pageIndex === 0) return `/api/history?limit=${PAGE_SIZE}${personaParam}`;
 
   const firstChatFromPage = previousPageData.chats.at(-1);
 
   if (!firstChatFromPage) return null;
 
-  return `/api/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}`;
+  return `/api/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}${personaParam}`;
 }
 
-export function SidebarHistory({ user }: { user: User | undefined }) {
+export function SidebarHistory({
+  user,
+  selectedPersonaId,
+}: {
+  user: User | undefined;
+  selectedPersonaId: string;
+}) {
   const { setOpenMobile } = useSidebar();
   const { id } = useParams();
+
+  // Create a key function that includes personaId in the cache key
+  // This ensures SWR treats different personas as separate queries
+  const getKey = (pageIndex: number, previousPageData: ChatHistory | null) => {
+    // Return null if we've reached the end
+    if (previousPageData && previousPageData.hasMore === false) {
+      return null;
+    }
+
+    // Build the key with personaId included
+    const personaParam = selectedPersonaId
+      ? `&persona_id=${encodeURIComponent(selectedPersonaId)}`
+      : '';
+
+    if (pageIndex === 0) {
+      return `/api/history?limit=${PAGE_SIZE}${personaParam}`;
+    }
+
+    const firstChatFromPage = previousPageData?.chats.at(-1);
+    if (!firstChatFromPage) return null;
+
+    return `/api/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}${personaParam}`;
+  };
 
   const {
     data: paginatedChatHistories,
@@ -103,8 +135,9 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     isValidating,
     isLoading,
     mutate,
-  } = useSWRInfinite<ChatHistory>(getChatHistoryPaginationKey, fetcher, {
-    fallbackData: [],
+  } = useSWRInfinite<ChatHistory>(getKey, fetcher, {
+    // Keep data when persona changes, but the key change will trigger a new fetch
+    revalidateFirstPage: true,
   });
 
   const router = useRouter();
@@ -115,9 +148,16 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     ? paginatedChatHistories.some((page) => page.hasMore === false)
     : false;
 
-  const hasEmptyChatHistory = paginatedChatHistories
-    ? paginatedChatHistories.every((page) => page.chats.length === 0)
-    : false;
+  // Only check for empty history if we've finished loading and received a response
+  // Check if we have at least one page of data that was loaded (not just fallback)
+  // and all pages are empty
+  const hasLoadedData =
+    paginatedChatHistories && paginatedChatHistories.length > 0;
+  const hasEmptyChatHistory =
+    !isLoading &&
+    !isValidating &&
+    hasLoadedData &&
+    paginatedChatHistories.every((page) => page.chats.length === 0);
 
   const handleDelete = async () => {
     const deletePromise = fetch(`/api/chat?id=${deleteId}`, {
@@ -160,7 +200,8 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     );
   }
 
-  if (isLoading) {
+  // Show loading state if we're loading and don't have data yet
+  if (isLoading || (!paginatedChatHistories && isValidating)) {
     return (
       <SidebarGroup>
         <div className="px-2 py-1 text-xs text-sidebar-foreground/50">
@@ -189,7 +230,16 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     );
   }
 
-  if (hasEmptyChatHistory) {
+  // Show empty state if we've loaded but have no chats
+  // Handle both undefined (not loaded yet) and empty array/empty pages cases
+  if (
+    !isLoading &&
+    !isValidating &&
+    (hasEmptyChatHistory ||
+      (paginatedChatHistories &&
+        paginatedChatHistories.length > 0 &&
+        paginatedChatHistories[0]?.chats.length === 0))
+  ) {
     return (
       <SidebarGroup>
         <SidebarGroupContent>
@@ -207,6 +257,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
         <SidebarGroupContent>
           <SidebarMenu>
             {paginatedChatHistories &&
+              paginatedChatHistories.length > 0 &&
               (() => {
                 const chatsFromHistory = paginatedChatHistories.flatMap(
                   (paginatedChatHistory) => paginatedChatHistory.chats,

@@ -2,8 +2,7 @@
 
 services:
   postgres:
-    image: ankane/pgvector
-    hostname: postgres
+    image: postgres:16
     restart: always
     environment:
       POSTGRES_USER: postgres

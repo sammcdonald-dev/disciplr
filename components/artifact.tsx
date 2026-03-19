@@ -67,6 +67,7 @@ function PureArtifact({
   votes,
   isReadonly,
   selectedVisibilityType,
+  selectedPersonaId,
 }: {
   chatId: string;
   input: string;
@@ -82,6 +83,7 @@ function PureArtifact({
   regenerate: UseChatHelpers<ChatMessage>['regenerate'];
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
+  selectedPersonaId: string;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
 
@@ -325,6 +327,7 @@ function PureArtifact({
                 <form className="flex flex-row gap-2 relative items-end w-full px-4 pb-4">
                   <MultimodalInput
                     chatId={chatId}
+                    selectedPersonaId={selectedPersonaId}
                     input={input}
                     setInput={setInput}
                     status={status}

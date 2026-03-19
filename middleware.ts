@@ -17,6 +17,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow static assets and images
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/personas') ||
+    pathname.startsWith('/images') ||
+    pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|webp)$/i)
+  ) {
+    return NextResponse.next();
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
@@ -54,6 +64,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/auth/guest|login|register).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/auth/guest|login|register|landing|personas|images).*)',
   ],
 };

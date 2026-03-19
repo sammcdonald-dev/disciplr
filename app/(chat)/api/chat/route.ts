@@ -15,6 +15,7 @@ import {
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
+  getUserPromptCount,
   saveChat,
   saveMessages,
 } from '@/lib/db/queries';
@@ -205,7 +206,17 @@ export async function POST(request: Request) {
     }
 
     const userType: UserType = session.user.type;
+    const isGuest = userType === 'guest';
 
+    if (isGuest) {
+      // For guest users, check total prompt count (limit: 8)
+      const promptCount = await getUserPromptCount({ id: session.user.id });
+      if (promptCount >= 8) {
+        return new ChatSDKError('rate_limit:auth').toResponse();
+      }
+    }
+
+    // For regular users, check daily message limit
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
       differenceInHours: 24,
@@ -223,6 +234,15 @@ export async function POST(request: Request) {
           )
         : '';
 
+    // Get selected persona from request body or fallback to cookie
+    const personaId = selectedPersonaId || (await getSelectedPersonaId());
+
+    const selectedPersona = personaId
+      ? personas.find((p) => p.id === personaId)
+      : personas.find((p) => p.id === DEFAULT_BIBLE_CHAT_PERSONA_ID);
+
+    const finalPersonaId = selectedPersona?.id || DEFAULT_BIBLE_CHAT_PERSONA_ID;
+
     // looks for chat by id - if not found,
     // creates new chat with title generated from first user message
     const chat = await getChatById({ id });
@@ -237,6 +257,7 @@ export async function POST(request: Request) {
         userId: session.user.id,
         title,
         visibility: selectedVisibilityType,
+        personaId: finalPersonaId,
       });
     } else {
       if (chat.userId !== session.user.id) {
@@ -272,13 +293,6 @@ export async function POST(request: Request) {
 
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
-
-    // Get selected persona from request body or fallback to cookie
-    const personaId = selectedPersonaId || (await getSelectedPersonaId());
-
-    const selectedPersona = personaId
-      ? personas.find((p) => p.id === personaId)
-      : personas.find((p) => p.id === DEFAULT_BIBLE_CHAT_PERSONA_ID);
 
     const personaPrompt = selectedPersona
       ? `${selectedPersona.name} — ${selectedPersona.description}\n${selectedPersona.prompt}`
