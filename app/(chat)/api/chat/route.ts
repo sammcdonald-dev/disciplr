@@ -64,11 +64,11 @@ async function retrieveBibleContext(userMessage: string): Promise<string> {
     apiKey: apiKey,
   });
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  //const genAI = new GoogleGenerativeAI(apiKey);
 
   // 1. Embed the user message
   const result = await newGenAI.models.embedContent({
-    model: 'text-embedding-004',
+    model: 'gemini-embedding-001',
     contents: userMessage,
   });
 
@@ -214,13 +214,14 @@ export async function POST(request: Request) {
     if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
       return new ChatSDKError('rate_limit:chat').toResponse();
     }
-    // ----- RAG step: enrich with Bible context -----
+    // TODO: ----- RAG step: enrich with Bible context -----
     const firstPart = message.parts[0];
-    const bibleContext = firstPart.type === 'text';
-    // ? await retrieveBibleContext(
-    //     (firstPart as { type: 'text'; text: string }).text,
-    //   )
-    //: '';
+    const bibleContext =
+      firstPart.type === 'text'
+        ? await retrieveBibleContext(
+            (firstPart as { type: 'text'; text: string }).text,
+          )
+        : '';
 
     // looks for chat by id - if not found,
     // creates new chat with title generated from first user message
