@@ -57,6 +57,13 @@
       "when": 1748000000000,
       "tag": "0007_add_persona_id_to_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1748200000000,
+      "tag": "0008_add_billing_and_bible_verses",
+      "breakpoints": true
     }
   ]
 }

@@ -28,7 +28,7 @@ export function PersonSelector({
   selectedPersonaId,
   className,
 }: {
-  session: Session;
+  session: Session | null;
   selectedPersonaId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
@@ -37,7 +37,7 @@ export function PersonSelector({
   const [optimisticPersonaId, setOptimisticPersonaId] =
     useOptimistic(selectedPersonaId);
 
-  const userType = session.user.type;
+  const userType = session?.user.type;
   const selectedPersona = useMemo(
     () => personas.find((persona) => persona.id === optimisticPersonaId),
     [optimisticPersonaId],

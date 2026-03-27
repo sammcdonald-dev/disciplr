@@ -23,7 +23,7 @@ export function AppSidebar({
   user,
   session,
   selectedPersonaId,
-}: { user: User | undefined; session: Session; selectedPersonaId: string }) {
+}: { user: User | undefined; session: Session | null; selectedPersonaId: string }) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
 

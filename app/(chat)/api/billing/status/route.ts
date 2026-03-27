@@ -1,44 +1,13 @@
-/**
- * BILLING STATUS ROUTE
- *
- * Purpose:
- * Determines whether a user currently has premium access.
- *
- * What it does:
- * - Receives { userId }
- * - Fetches billing fields from database
- * - Determines entitlement based on:
- *   - has_lifetime_access
- *   - subscription_status
- *   - current_period_end
- * - Returns access boolean + billing metadata
- *
- * This route is used by the frontend to:
- * - Gate premium features
- * - Display subscription state
- * - Show renewal dates
- *
- * Important:
- * This route NEVER talks to Stripe.
- * It trusts only the database (which webhook keeps updated).
- */
-
 import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
+import { auth } from '@/app/(auth)/auth';
 import { db, user } from '@/lib/db';
-
-/**
- * BILLING STATUS ROUTE
- *
- * Determines whether a user currently has premium access.
- */
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await req.json();
-
-    if (!userId) {
-      return new NextResponse('Missing userId', { status: 400 });
+    const session = await auth();
+    if (!session?.user?.id) {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const users = await db
@@ -48,7 +17,7 @@ export async function POST(req: Request) {
         current_period_end: user.current_period_end,
       })
       .from(user)
-      .where(eq(user.id, userId));
+      .where(eq(user.id, session.user.id));
 
     const userData = users[0];
 

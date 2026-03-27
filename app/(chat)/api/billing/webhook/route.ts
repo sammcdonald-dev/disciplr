@@ -21,41 +21,44 @@
  * Stripe retries events if we do not return HTTP 200.
  */
 
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
-import Stripe from 'stripe';
-import { headers } from 'next/headers';
-import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '@/lib/env';
-import { db, user } from '@/lib/db';
-
-const stripe = new Stripe(STRIPE_SECRET_KEY);
-const webhookSecret = STRIPE_WEBHOOK_SECRET;
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
+import type Stripe from "stripe";
+import { headers } from "next/headers";
+import { env } from "@/lib/env";
+import { getStripe } from "@/lib/billing/stripe";
+import { db, user } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const headersList = await headers();
-  const signature = headersList.get('stripe-signature');
+  const signature = headersList.get("stripe-signature");
 
   if (!signature) {
-    return new NextResponse('Missing signature', { status: 400 });
+    return new NextResponse("Missing signature", { status: 400 });
   }
 
+  const stripe = getStripe();
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      env.STRIPE_WEBHOOK_SECRET,
+    );
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err);
+    console.error("Webhook signature verification failed:", err);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed': {
+      case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const customerId =
-          typeof session.customer === 'string'
+          typeof session.customer === "string"
             ? session.customer
             : session.customer?.id;
 
@@ -69,10 +72,10 @@ export async function POST(req: NextRequest) {
         const userData = users[0];
         if (!userData) break;
 
-        if (session.mode === 'subscription') {
+        if (session.mode === "subscription") {
           const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string,
-            { expand: ['items.data'] },
+            { expand: ["items.data"] },
           );
 
           const firstItem = subscription.items.data[0];
@@ -88,7 +91,7 @@ export async function POST(req: NextRequest) {
             .where(eq(user.id, userData.id));
         }
 
-        if (session.mode === 'payment') {
+        if (session.mode === "payment") {
           await db
             .update(user)
             .set({
@@ -100,20 +103,24 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case 'invoice.payment_succeeded': {
+      case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
 
+        // Support both newer (invoice.parent.subscription_details) and
+        // older (invoice.subscription) Stripe API versions
         const subscriptionId: string | null =
-          invoice.parent?.type === 'subscription_details'
+          invoice.parent?.type === "subscription_details"
             ? ((invoice.parent.subscription_details?.subscription as
                 | string
                 | null) ?? null)
-            : null;
+            : typeof (invoice as any).subscription === "string"
+              ? (invoice as any).subscription
+              : null;
 
         if (!subscriptionId) break;
 
         const customerId =
-          typeof invoice.customer === 'string'
+          typeof invoice.customer === "string"
             ? invoice.customer
             : invoice.customer?.id;
 
@@ -122,7 +129,7 @@ export async function POST(req: NextRequest) {
         const subscription = await stripe.subscriptions.retrieve(
           subscriptionId,
           {
-            expand: ['items.data'],
+            expand: ["items.data"],
           },
         );
 
@@ -149,11 +156,11 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case 'customer.subscription.deleted': {
+      case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
 
         const customerId =
-          typeof subscription.customer === 'string'
+          typeof subscription.customer === "string"
             ? subscription.customer
             : subscription.customer?.id;
 
@@ -170,7 +177,7 @@ export async function POST(req: NextRequest) {
         await db
           .update(user)
           .set({
-            subscription_status: 'canceled',
+            subscription_status: "canceled",
           })
           .where(eq(user.id, userData.id));
 
@@ -183,8 +190,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (err) {
-    console.error('Webhook handler error:', err);
-    // Still acknowledge to Stripe
+    console.error("Webhook handler error:", err);
     return NextResponse.json({ received: true }, { status: 200 });
   }
 }

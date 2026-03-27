@@ -1,16 +1,14 @@
-import Stripe from 'stripe';
+import Stripe from "stripe";
+import { env } from "@/lib/env";
 
-// Sets up Stripe client exactly once
-// Fails loudly if the key is not set
-// Exports a single client
+let _stripe: Stripe | null = null;
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-
-if (!stripeSecretKey) {
-  throw new Error('STRIPE_SECRET_KEY is not set');
+export function getStripe(): Stripe {
+  if (!env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY is not set");
+  }
+  if (!_stripe) {
+    _stripe = new Stripe(env.STRIPE_SECRET_KEY);
+  }
+  return _stripe;
 }
-
-export const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2025-11-17.clover',
-  typescript: true,
-});

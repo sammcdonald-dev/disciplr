@@ -1,6 +1,7 @@
 import {
   convertToModelMessages,
   createUIMessageStream,
+  embed,
   JsonToSseTransformStream,
   smoothStream,
   stepCountIs,
@@ -42,107 +43,99 @@ import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import type { LanguageModelId } from '@/lib/ai/providers';
 import { cookies } from 'next/headers';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { db } from '@/lib/db';
-import { GoogleGenAI } from '@google/genai';
+import { getRandomGoogleApiKey } from '@/lib/ai/api-keys';
 
-// Get selected persona from cookie
 async function getSelectedPersonaId(): Promise<string | undefined> {
   const cookieStore = await cookies();
   return cookieStore.get('bible-chat')?.value;
 }
 
 async function retrieveBibleContext(userMessage: string): Promise<string> {
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (!apiKey) {
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     console.warn(
       'GOOGLE_GENERATIVE_AI_API_KEY is not set; skipping embedding.',
     );
     return '';
   }
 
-  const newGenAI = new GoogleGenAI({
-    apiKey: apiKey,
-  });
+  try {
+    const google = createGoogleGenerativeAI({
+      apiKey: getRandomGoogleApiKey(),
+    });
 
-  //const genAI = new GoogleGenerativeAI(apiKey);
+    const { embedding } = await embed({
+      model: google.textEmbeddingModel('gemini-embedding-001'),
+      value: userMessage,
+    });
 
-  // 1. Embed the user message
-  const result = await newGenAI.models.embedContent({
-    model: 'gemini-embedding-001',
-    contents: userMessage,
-  });
+    if (!embedding || embedding.length === 0) {
+      console.warn('Could not embed user message');
+      return '';
+    }
 
-  const embedding = result.embeddings?.[0];
+    const vectorLiteral = `[${embedding.join(',')}]`;
+    const verses = await db.execute(sql`
+      SELECT book, chapter, verse, text,
+             (embedding <-> ${vectorLiteral}::vector) AS distance
+      FROM bible_verses
+      WHERE embedding IS NOT NULL
+      ORDER BY distance ASC
+      LIMIT 5
+    `);
 
-  if (!embedding) {
-    throw new Error('Embedding generation failed');
-  }
+    if (!verses || verses.length === 0) {
+      return '';
+    }
 
-  const userEmbedding = result.embeddings?.[0].values ?? [];
-  if (!userEmbedding) {
-    console.warn('Could not embed user message');
+    const DISTANCE_THRESHOLD = 1.2;
+    const relevant = (verses as any[]).filter(
+      (row) => parseFloat(row.distance) < DISTANCE_THRESHOLD,
+    );
+
+    if (relevant.length === 0) {
+      return '';
+    }
+
+    const context = relevant
+      .map(
+        (row: any, i: number) =>
+          `[${i + 1}] ${row.book} ${row.chapter}:${row.verse}\n"${row.text}"`,
+      )
+      .join('\n\n');
+
+    return `Relevant Bible Passages:\n${context}`;
+  } catch (err) {
+    console.warn('RAG context retrieval failed, continuing without it:', err);
     return '';
   }
-
-  // 2. Query for top-5 most similar verses using vector distance
-  const vectorLiteral = `[${userEmbedding.join(',')}]`;
-  const verses = await db.execute(sql`
-  SELECT book, chapter, verse, text,
-         (embedding <-> ${vectorLiteral}::vector) AS distance
-  FROM bible_verses
-  WHERE embedding IS NOT NULL
-  ORDER BY distance ASC
-  LIMIT 5
-`);
-
-  // 3. Format and return as context string
-  if (!verses || verses.length === 0) {
-    return 'No relevant Bible passages found.';
-  }
-
-  const context = verses
-    .map(
-      (row: any, i: number) =>
-        `[${i + 1}] ${row.book} ${row.chapter}:${row.verse}\n"${row.text}"`,
-    )
-    .join('\n\n');
-
-  return `Relevant Bible Passages:\n${context}`;
 }
 
 // TransformStream to enforce guardrails
 function guardrailFilterStream(): TransformStream {
+  const blockedTerms = [
+    'violence',
+    'hate',
+    'self-harm',
+    'suicide',
+    'explicit',
+    'racist',
+    'bully',
+    'harass',
+  ];
+
   return new TransformStream({
     transform(chunk, controller) {
-      const text = chunk?.content ?? '';
+      const text = (chunk?.content ?? '').toLowerCase();
 
-      // Block unsafe or inappropriate content
-      const lowerText = text.toLowerCase();
+      const isBlocked = blockedTerms.some((term) => text.includes(term));
 
-      // Basic guardrails for now - can expand how we do this later
-      if (
-        lowerText.includes('violence') ||
-        lowerText.includes('hate') ||
-        lowerText.includes('sex') ||
-        lowerText.includes('drugs') ||
-        lowerText.includes('self-harm') ||
-        lowerText.includes('suicide') ||
-        lowerText.includes('abuse') ||
-        lowerText.includes('explicit') ||
-        lowerText.includes('racist') ||
-        lowerText.includes('bully') ||
-        lowerText.includes('harass')
-      ) {
-        const text = chunk?.content ?? '';
-
-        // Example guardrail: block off-topic or unsafe outputs
-        if (text.toLowerCase().includes('violence')) {
-          controller.enqueue({
-            ...chunk,
-            content: '⚠️ Response blocked due to unsafe content.',
-          });
-        }
+      if (isBlocked) {
+        controller.enqueue({
+          ...chunk,
+          content: '⚠️ Response blocked due to unsafe content.',
+        });
       } else {
         controller.enqueue(chunk);
       }
@@ -405,6 +398,10 @@ export async function DELETE(request: Request) {
   }
 
   const chat = await getChatById({ id });
+
+  if (!chat) {
+    return new ChatSDKError('not_found:chat').toResponse();
+  }
 
   if (chat.userId !== session.user.id) {
     return new ChatSDKError('forbidden:chat').toResponse();

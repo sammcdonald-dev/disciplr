@@ -9,7 +9,10 @@ import {
   primaryKey,
   foreignKey,
   boolean,
+  serial,
+  integer,
 } from 'drizzle-orm/pg-core';
+import { vector } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('User', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
@@ -21,16 +24,6 @@ export const user = pgTable('User', {
   has_lifetime_access: boolean('has_lifetime_access').default(false),
 });
 
-import {
-  //pgTable,
-  serial,
-  //varchar,
-  integer,
-  //text,
-  //timestamp,
-} from 'drizzle-orm/pg-core';
-import { vector } from 'drizzle-orm/pg-core'; // <-- IMPORTANT
-
 export const bibleVerses = pgTable('bible_verses', {
   id: serial('id').primaryKey(),
   book: varchar('book', { length: 50 }).notNull(),
@@ -38,8 +31,7 @@ export const bibleVerses = pgTable('bible_verses', {
   verse: integer('verse').notNull(),
   text: text('text').notNull(),
 
-  // pgvector embedding (768 dimensions)
-  embedding: vector('embedding', { dimensions: 768 }),
+  embedding: vector('embedding', { dimensions: 3072 }),
 
   createdAt: timestamp('created_at').defaultNow(),
 });
@@ -50,9 +42,9 @@ export const chat = pgTable('Chat', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   createdAt: timestamp('createdAt').notNull(),
   title: text('title').notNull(),
-  userId: uuid('userId'),
-  // .notNull()
-  // .references(() => user.id),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => user.id),
   visibility: varchar('visibility', { enum: ['public', 'private'] })
     .notNull()
     .default('private'),
@@ -142,9 +134,9 @@ export const document = pgTable(
     kind: varchar('text', { enum: ['text', 'code', 'image', 'sheet'] })
       .notNull()
       .default('text'),
-    userId: uuid('userId'),
-    // .notNull()
-    // .references(() => user.id),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => user.id),
   },
   (table) => {
     return {
@@ -165,9 +157,9 @@ export const suggestion = pgTable(
     suggestedText: text('suggestedText').notNull(),
     description: text('description'),
     isResolved: boolean('isResolved').notNull().default(false),
-    userId: uuid('userId'),
-    // .notNull()
-    // .references(() => user.id),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => user.id),
     createdAt: timestamp('createdAt').notNull(),
   },
   (table) => ({
