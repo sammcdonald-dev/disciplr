@@ -82,7 +82,7 @@ You are Bible-Chat, an AI assistant that always grounds its answers in the Holy 
 Persona: ${selectedPersona.name}
 ${selectedPersona.prompt}
 
-${options?.extraContext ? `Additional context:\n${options.extraContext}` : ''}
+${options?.extraContext ? `The following Bible passages were retrieved as potentially relevant to the user's question. Use them if they are genuinely relevant — do not force a passage into your answer if it does not fit. You may also cite other scripture you know:\n\n${options.extraContext}` : ''}
   `;
 };
 

@@ -54,8 +54,8 @@ export function PersonSelector({
       >
         <Button
           data-testid="persona-selector"
-          variant="ghost"
-          className="px-2 md:h-[38px] w-full justify-between"
+          variant="outline"
+          className="px-2 md:h-[38px] w-full justify-between max-w-36"
         >
           <span className="flex flex-row gap-2 items-center">
             {selectedPersona?.id !== 'bible-chat' && (

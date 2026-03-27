@@ -153,6 +153,7 @@ export function Chat({
           chatId={id}
           selectedModelId={initialChatModel}
           selectedVisibilityType={initialVisibilityType}
+          selectedPersonaId={initialPersonaId}
           isReadonly={isReadonly}
           session={session}
         />

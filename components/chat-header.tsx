@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
 
-import { ModelSelector } from '@/components/model-selector';
+import { PersonSelector } from '@/components/person-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
 import { PlusIcon, VercelIcon } from './icons';
@@ -18,12 +18,14 @@ function PureChatHeader({
   chatId,
   selectedModelId,
   selectedVisibilityType,
+  selectedPersonaId,
   isReadonly,
   session,
 }: {
   chatId: string;
   selectedModelId: string;
   selectedVisibilityType: VisibilityType;
+  selectedPersonaId: string;
   isReadonly: boolean;
   session: Session;
 }) {
@@ -55,13 +57,13 @@ function PureChatHeader({
         </Tooltip>
       )}
 
-      {/* {!isReadonly && (
-        <ModelSelector
+      {!isReadonly && (
+        <PersonSelector
           session={session}
-          selectedModelId={selectedModelId}
+          selectedPersonaId={selectedPersonaId}
           className="order-1 md:order-2"
         />
-      )} */}
+      )}
 
       {/* {!isReadonly && (
         <VisibilitySelector
@@ -88,5 +90,8 @@ function PureChatHeader({
 }
 
 export const ChatHeader = memo(PureChatHeader, (prevProps, nextProps) => {
-  return prevProps.selectedModelId === nextProps.selectedModelId;
+  return (
+    prevProps.selectedModelId === nextProps.selectedModelId &&
+    prevProps.selectedPersonaId === nextProps.selectedPersonaId
+  );
 });

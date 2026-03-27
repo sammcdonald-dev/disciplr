@@ -71,12 +71,12 @@ const PurePreviewMessage = ({
           )}
         >
           {message.role === 'assistant' && (
-            <div className="size-14 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
+            <div className="size-10 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
               <div className="translate-y-px">
                 {selectedPersonaId !== 'bible-chat' ? (
                   <PersonaIcon selectedPersonaId={selectedPersonaId} />
                 ) : (
-                  <SparklesIcon size={14} />
+                  <SparklesIcon size={16} />
                 )}
               </div>
             </div>
@@ -366,11 +366,11 @@ export const ThinkingMessage = ({
           },
         )}
       >
-        <div className="size-14 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
+        <div className="size-10 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
           {selectedPersonaId !== 'bible-chat' ? (
             <PersonaIcon selectedPersonaId={selectedPersonaId} />
           ) : (
-            <SparklesIcon size={14} />
+            <SparklesIcon size={16} />
           )}
         </div>
 

@@ -1,10 +1,16 @@
 // lib/ai/providers.ts
 import { customProvider, wrapLanguageModel } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import {
+  artifactModel,
+  chatModel,
+  reasoningModel,
+  titleModel,
+} from './models.test';
 import { isTestEnvironment } from '../constants';
 import { createFallbackLanguageModel } from './fallback-language-model';
+import { getGoogleApiKeys } from './api-keys';
 
-// Define the allowed model IDs
 export type LanguageModelId =
   | 'chat-model'
   | 'chat-model-reasoning'
@@ -13,19 +19,22 @@ export type LanguageModelId =
 
 export const myProvider = (() => {
   if (isTestEnvironment) {
-    // Simple fallback mock provider
-    return customProvider({
-      languageModels: {},
+    const base = customProvider({
+      languageModels: {
+        'chat-model': chatModel,
+        'chat-model-reasoning': reasoningModel,
+        'title-model': titleModel,
+        'artifact-model': artifactModel,
+      },
     });
+
+    return {
+      ...base,
+      languageModel: (id: LanguageModelId) => base.languageModel(id),
+    };
   }
 
-  // ✅ Production mode with Gemini (multi-key fallback on rate limit)
-  const rawKeys = process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? '';
-  const apiKeys = rawKeys
-    .split(',')
-    .map((k) => k.trim())
-    .filter(Boolean);
-  const keys = apiKeys.length > 0 ? apiKeys : [rawKeys].filter(Boolean);
+  const keys = getGoogleApiKeys();
   if (keys.length === 0) {
     throw new Error(
       'GOOGLE_GENERATIVE_AI_API_KEY must be set (comma-separated for multiple keys)',
