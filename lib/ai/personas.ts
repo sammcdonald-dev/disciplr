@@ -17,7 +17,7 @@ export interface Persona {
 export const personas: Persona[] = [
   {
     id: "disciplr",
-    name: `✞ disciplr is a faith focused ai product built on the bones of vercel/ai-chat!`,
+    name: `✞ disciplr`,
     description:
       "Deep contextual analysis of scripture, historical background, and theology.",
     prompt: `

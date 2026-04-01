@@ -1,8 +1,10 @@
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 export const Greeting = ({
   selectedPersonaId,
-}: { selectedPersonaId: string }) => {
+}: {
+  selectedPersonaId: string;
+}) => {
   return (
     <div
       key="overview"
@@ -15,8 +17,11 @@ export const Greeting = ({
         transition={{ delay: 0.5 }}
         className="text-2xl font-semibold"
       >
-        Hello there! I&apos;m{' '}
-        {selectedPersonaId.charAt(0).toUpperCase() + selectedPersonaId.slice(1)}
+        Hello there! I&apos;m{" "}
+        {selectedPersonaId === "disciplr"
+          ? "✞ disciplr"
+          : selectedPersonaId.charAt(0).toUpperCase() +
+            selectedPersonaId.slice(1)}
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
