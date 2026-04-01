@@ -1,13 +1,31 @@
-import { eq } from 'drizzle-orm';
-import { auth } from '@/app/(auth)/auth';
-import { env } from '@/lib/env';
-import { getStripe } from '@/lib/billing/stripe';
-import { db, user } from '@/lib/db';
+/**
+ * BILLING PORTAL ROUTE
+ *
+ * Purpose:
+ * Creates a Stripe Billing Portal session for a user.
+ *
+ * What it does:
+ * - Receives { userId }
+ * - Retrieves user's stripe_customer_id
+ * - Creates Stripe Billing Portal session
+ * - Returns portal URL
+ *
+ * Stripe handles:
+ * - Canceling subscriptions
+ * - Updating payment methods
+ * - Viewing invoices
+ */
+
+import { eq } from "drizzle-orm";
+import { auth } from "@/app/(auth)/auth";
+import { env } from "@/lib/env";
+import { getStripe } from "@/lib/billing/stripe";
+import { db, user } from "@/lib/db";
 
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const users = await db
@@ -17,11 +35,11 @@ export async function POST(req: Request) {
   const userData = users[0];
 
   if (!userData) {
-    return new Response('User not found', { status: 404 });
+    return new Response("User not found", { status: 404 });
   }
 
   if (!userData.stripe_customer_id) {
-    return new Response('No billing account found', { status: 404 });
+    return new Response("No billing account found", { status: 404 });
   }
 
   const portalSession = await getStripe().billingPortal.sessions.create({
