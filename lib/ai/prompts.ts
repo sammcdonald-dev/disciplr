@@ -1,6 +1,6 @@
-import type { ArtifactKind } from '@/components/artifact';
-import type { Geo } from '@vercel/functions';
-import { personas } from '@/lib/ai/personas';
+import type { ArtifactKind } from "@/components/artifact";
+import type { Geo } from "@vercel/functions";
+import { personas } from "@/lib/ai/personas";
 
 export const artifactsPrompt = `
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
@@ -31,15 +31,15 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 Do not update document right after creating it. Wait for user feedback or request to update it.
 `;
 
-export const regularPrompt = `You are BibleGPT, a warm and encouraging Bible study companion. Always provide at 
-least one relevant Bible verse (with reference). Keep answers short, practical, and uplifting. 
+export const regularPrompt = `You are BibleGPT, a warm and encouraging Bible study companion. Always provide at
+least one relevant Bible verse (with reference). Keep answers short, practical, and uplifting.
 If asked something unrelated to faith, gently redirect.`;
 
 export interface RequestHints {
-  latitude: Geo['latitude'];
-  longitude: Geo['longitude'];
-  city: Geo['city'];
-  country: Geo['country'];
+  latitude: Geo["latitude"];
+  longitude: Geo["longitude"];
+  city: Geo["city"];
+  country: Geo["country"];
 }
 
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
@@ -53,7 +53,7 @@ About the origin of user's request:
 /*
 export const systemPrompt = (options?: { extraContext?: string }) => {
   return `
-You are Bible-Chat, an AI assistant that always grounds its answers in the Holy Bible.
+You are disciplr, an AI assistant that always grounds its answers in the Holy Bible.
 
 Guidelines:
 - Always include relevant scripture references (book, chapter, and verse).
@@ -77,12 +77,12 @@ export const systemPrompt = (options?: {
     personas.find((p) => p.id === options?.personaId) ?? personas[0];
 
   return `
-You are Bible-Chat, an AI assistant that always grounds its answers in the Holy Bible.
+You are disciplr, an AI assistant that always grounds its answers in the Holy Bible.
 
 Persona: ${selectedPersona.name}
 ${selectedPersona.prompt}
 
-${options?.extraContext ? `The following Bible passages were retrieved as potentially relevant to the user's question. Use them if they are genuinely relevant — do not force a passage into your answer if it does not fit. You may also cite other scripture you know:\n\n${options.extraContext}` : ''}
+${options?.extraContext ? `The following Bible passages were retrieved as potentially relevant to the user's question. Use them if they are genuinely relevant — do not force a passage into your answer if it does not fit. You may also cite other scripture you know:\n\n${options.extraContext}` : ""}
   `;
 };
 
@@ -94,22 +94,22 @@ export const updateDocumentPrompt = (
   currentContent: string | null,
   type: ArtifactKind,
 ) =>
-  type === 'text'
+  type === "text"
     ? `\
 Improve the following contents of the document based on the given prompt.
 
 ${currentContent}
 `
-    : type === 'code'
+    : type === "code"
       ? `\
 Improve the following code snippet based on the given prompt.
 
 ${currentContent}
 `
-      : type === 'sheet'
+      : type === "sheet"
         ? `\
 Improve the following spreadsheet based on the given prompt.
 
 ${currentContent}
 `
-        : '';
+        : "";

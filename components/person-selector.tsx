@@ -58,7 +58,7 @@ export function PersonSelector({
           className="px-2 md:h-[38px] w-full justify-between sm:max-w-72"
         >
           <span className="flex flex-row gap-2 items-center">
-            {selectedPersona?.id !== "bible-chat" && (
+            {selectedPersona?.id !== "disciplr" && (
               <img
                 src={`/personas/${selectedPersona?.id}.png`}
                 alt=""
@@ -100,7 +100,7 @@ export function PersonSelector({
               >
                 <div className="flex flex-col gap-1 items-start">
                   <div className="flex flex-row gap-2 items-center text-left">
-                    {persona.id !== "bible-chat" && (
+                    {persona.id !== "disciplr" && (
                       <img
                         src={`/personas/${persona.id}.png`}
                         alt=""
