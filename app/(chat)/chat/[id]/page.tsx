@@ -42,7 +42,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   const cookieStore = await cookies();
   const chatModelFromCookie = cookieStore.get('chat-model');
-  const personaIdFromCookie = cookieStore.get('bible-chat');
+  // Use personaId from the chat (database) if available, otherwise fallback to cookie
+  const personaId = chat.personaId || cookieStore.get('bible-chat')?.value || DEFAULT_BIBLE_CHAT_PERSONA_ID;
 
   if (!chatModelFromCookie) {
     return (
@@ -51,9 +52,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           id={chat.id}
           initialMessages={uiMessages}
           initialChatModel={DEFAULT_CHAT_MODEL}
-          initialPersonaId={
-            personaIdFromCookie?.value || DEFAULT_BIBLE_CHAT_PERSONA_ID
-          }
+          initialPersonaId={personaId}
           initialVisibilityType={chat.visibility}
           isReadonly={session?.user?.id !== chat.userId}
           session={session}
@@ -70,9 +69,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         id={chat.id}
         initialMessages={uiMessages}
         initialChatModel={chatModelFromCookie.value}
-        initialPersonaId={
-          personaIdFromCookie?.value || DEFAULT_BIBLE_CHAT_PERSONA_ID
-        }
+        initialPersonaId={personaId}
         initialVisibilityType={chat.visibility}
         isReadonly={session?.user?.id !== chat.userId}
         session={session}

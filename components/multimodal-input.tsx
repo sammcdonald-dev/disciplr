@@ -28,9 +28,11 @@ import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
+import { DEFAULT_BIBLE_CHAT_PERSONA_ID } from '@/lib/ai/personas';
 
 function PureMultimodalInput({
   chatId,
+  selectedPersonaId,
   input,
   setInput,
   status,
@@ -44,6 +46,7 @@ function PureMultimodalInput({
   selectedVisibilityType,
 }: {
   chatId: string;
+  selectedPersonaId: string;
   input: string;
   setInput: Dispatch<SetStateAction<string>>;
   status: UseChatHelpers<ChatMessage>['status'];
@@ -234,7 +237,8 @@ function PureMultimodalInput({
         )}
       </AnimatePresence>
 
-      {messages.length === 0 &&
+      {selectedPersonaId === DEFAULT_BIBLE_CHAT_PERSONA_ID &&
+        messages.length === 0 &&
         attachments.length === 0 &&
         uploadQueue.length === 0 && (
           <SuggestedActions
@@ -327,6 +331,12 @@ function PureMultimodalInput({
 export const MultimodalInput = memo(
   PureMultimodalInput,
   (prevProps, nextProps) => {
+    if (
+      prevProps.selectedPersonaId !== DEFAULT_BIBLE_CHAT_PERSONA_ID &&
+      nextProps.selectedPersonaId !== DEFAULT_BIBLE_CHAT_PERSONA_ID
+    ) {
+      return false;
+    }
     if (prevProps.input !== nextProps.input) return false;
     if (prevProps.status !== nextProps.status) return false;
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;

@@ -64,7 +64,7 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarHistory user={user} />
+        <SidebarHistory user={user} selectedPersonaId={selectedPersonaId} />
         <div className="px-2">
           <PersonSelector
             session={session}

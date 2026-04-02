@@ -11,6 +11,7 @@ import { useDataStream } from './data-stream-provider';
 
 interface MessagesProps {
   chatId: string;
+  selectedPersonaId: string;
   status: UseChatHelpers<ChatMessage>['status'];
   votes: Array<Vote> | undefined;
   messages: ChatMessage[];
@@ -22,6 +23,7 @@ interface MessagesProps {
 
 function PureMessages({
   chatId,
+  selectedPersonaId,
   status,
   votes,
   messages,
@@ -41,18 +43,22 @@ function PureMessages({
   });
 
   useDataStream();
+  console.log(selectedPersonaId);
 
   return (
     <div
       ref={messagesContainerRef}
       className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4 relative"
     >
-      {messages.length === 0 && <Greeting />}
+      {messages.length === 0 && (
+        <Greeting selectedPersonaId={selectedPersonaId} />
+      )}
 
       {messages.map((message, index) => (
         <PreviewMessage
           key={message.id}
           chatId={chatId}
+          selectedPersonaId={selectedPersonaId}
           message={message}
           isLoading={status === 'streaming' && messages.length - 1 === index}
           vote={
@@ -71,11 +77,13 @@ function PureMessages({
 
       {status === 'submitted' &&
         messages.length > 0 &&
-        messages[messages.length - 1].role === 'user' && <ThinkingMessage />}
+        messages[messages.length - 1].role === 'user' && (
+          <ThinkingMessage selectedPersonaId={selectedPersonaId} />
+        )}
 
       <motion.div
         ref={messagesEndRef}
-        className="shrink-0 min-w-[24px] min-h-[24px]"
+        className="shrink-0 min-w-[30px] min-h-[30px]"
         onViewportLeave={onViewportLeave}
         onViewportEnter={onViewportEnter}
       />

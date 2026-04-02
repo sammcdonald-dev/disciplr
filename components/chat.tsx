@@ -12,8 +12,6 @@ import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
 import type { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
-import { unstable_serialize } from 'swr/infinite';
-import { getChatHistoryPaginationKey } from './sidebar-history';
 import { toast } from './toast';
 import type { Session } from 'next-auth';
 import { useSearchParams } from 'next/navigation';
@@ -85,7 +83,26 @@ export function Chat({
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
     },
     onFinish: () => {
-      mutate(unstable_serialize(getChatHistoryPaginationKey));
+      // Revalidate all chat history caches after message finishes
+      // This ensures the history updates after the first message creates a new chat
+      // The chat is created in the API route before streaming starts,
+      // and messages are saved after streaming finishes (in onFinish callback)
+      // So by the time this client-side onFinish is called, everything is saved
+
+      // Use mutate with revalidate: true to trigger a refetch
+      // This works for both regular SWR and SWR Infinite
+      mutate(
+        (key) => {
+          // Match all history API keys (includes persona_id query param)
+          if (typeof key === 'string') {
+            return key.startsWith('/api/history');
+          }
+          // SWR Infinite might store keys differently, but the matcher should handle strings
+          return false;
+        },
+        undefined,
+        { revalidate: true },
+      );
     },
     onError: (error) => {
       if (error instanceof ChatSDKError) {
@@ -142,6 +159,7 @@ export function Chat({
 
         <Messages
           chatId={id}
+          selectedPersonaId={initialPersonaId}
           status={status}
           votes={votes}
           messages={messages}
@@ -155,6 +173,7 @@ export function Chat({
           {!isReadonly && (
             <MultimodalInput
               chatId={id}
+              selectedPersonaId={initialPersonaId}
               input={input}
               setInput={setInput}
               status={status}
@@ -185,6 +204,7 @@ export function Chat({
         votes={votes}
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
+        selectedPersonaId={initialPersonaId}
       />
     </>
   );
