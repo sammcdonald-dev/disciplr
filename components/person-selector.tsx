@@ -1,34 +1,34 @@
 /* eslint-disable @next/next/no-img-element */
-'use client';
+"use client";
 
-import { startTransition, use, useMemo, useOptimistic, useState } from 'react';
+import { startTransition, use, useMemo, useOptimistic, useState } from "react";
 
-import { saveChatPersonaAsCookie } from '@/app/(chat)/actions';
+import { saveChatPersonaAsCookie } from "@/app/(chat)/actions";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { chatModels } from '@/lib/ai/models';
-import { cn } from '@/lib/utils';
-import Image from 'next/image';
+} from "@/components/ui/dropdown-menu";
+import { chatModels } from "@/lib/ai/models";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
 
-import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
-import { entitlementsByUserType } from '@/lib/ai/entitlements';
-import type { Session } from 'next-auth';
-import { personas } from '@/lib/ai/personas';
-import { Icon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { CheckCircleFillIcon, ChevronDownIcon } from "./icons";
+import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import type { Session } from "next-auth";
+import { personas } from "@/lib/ai/personas";
+import { Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function PersonSelector({
   session,
   selectedPersonaId,
   className,
 }: {
-  session: Session;
+  session: Session | null;
   selectedPersonaId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
@@ -37,7 +37,7 @@ export function PersonSelector({
   const [optimisticPersonaId, setOptimisticPersonaId] =
     useOptimistic(selectedPersonaId);
 
-  const userType = session.user.type;
+  const userType = session?.user.type;
   const selectedPersona = useMemo(
     () => personas.find((persona) => persona.id === optimisticPersonaId),
     [optimisticPersonaId],
@@ -48,17 +48,17 @@ export function PersonSelector({
       <DropdownMenuTrigger
         asChild
         className={cn(
-          'w-fit data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
+          "w-fit data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
           className,
         )}
       >
         <Button
           data-testid="persona-selector"
-          variant="ghost"
-          className="px-2 md:h-[38px] w-full justify-between"
+          variant="outline"
+          className="px-2 md:h-[38px] w-full justify-between sm:max-w-72"
         >
           <span className="flex flex-row gap-2 items-center">
-            {selectedPersona?.id !== 'bible-chat' && (
+            {selectedPersona?.id !== "disciplr" && (
               <img
                 src={`/personas/${selectedPersona?.id}.png`}
                 alt=""
@@ -94,13 +94,13 @@ export function PersonSelector({
                 type="button"
                 className="gap-4 group/item flex flex-row justify-between items-center w-full line-clamp-1 max-w-[300px]"
                 onClick={() => {
-                  router.push('/');
+                  router.push("/");
                   router.refresh();
                 }}
               >
                 <div className="flex flex-col gap-1 items-start">
                   <div className="flex flex-row gap-2 items-center text-left">
-                    {persona.id !== 'bible-chat' && (
+                    {persona.id !== "disciplr" && (
                       <img
                         src={`/personas/${persona.id}.png`}
                         alt=""

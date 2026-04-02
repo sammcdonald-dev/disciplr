@@ -1,13 +1,15 @@
 // lib/ai/providers.ts
 import { customProvider, wrapLanguageModel } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import {
+  artifactModel,
+  chatModel,
+  reasoningModel,
+  titleModel,
+} from './models.test';
 import { isTestEnvironment } from '../constants';
-<<<<<<< HEAD
-=======
 import { createFallbackLanguageModel } from './fallback-language-model';
->>>>>>> 0535d4f1f6314d7b96c35e828bf1b1cf4ee7b3af
 
-// Define the allowed model IDs
 export type LanguageModelId =
   | 'chat-model'
   | 'chat-model-reasoning'
@@ -22,12 +24,10 @@ export const myProvider = (() => {
     });
   }
 
-<<<<<<< HEAD
   const google = createGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
   });
-=======
-  // ✅ Production mode with Gemini (multi-key fallback on rate limit)
+  // Production mode with Gemini (multi-key fallback on rate limit)
   const rawKeys = process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? '';
   const apiKeys = rawKeys
     .split(',')
@@ -45,7 +45,6 @@ export const myProvider = (() => {
   );
   const geminiModels = googleProviders.map((p) => p.chat('gemini-2.5-flash'));
   const fallbackModel = createFallbackLanguageModel(geminiModels);
->>>>>>> 0535d4f1f6314d7b96c35e828bf1b1cf4ee7b3af
 
   const base = customProvider({
     languageModels: {

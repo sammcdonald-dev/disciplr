@@ -23,22 +23,16 @@
  * It trusts only the database (which webhook keeps updated).
  */
 
-import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
-import { db, user } from '@/lib/db';
-
-/**
- * BILLING STATUS ROUTE
- *
- * Determines whether a user currently has premium access.
- */
+import { NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
+import { auth } from "@/app/(auth)/auth";
+import { db, user } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await req.json();
-
-    if (!userId) {
-      return new NextResponse('Missing userId', { status: 400 });
+    const session = await auth();
+    if (!session?.user?.id) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const users = await db
@@ -48,18 +42,18 @@ export async function POST(req: Request) {
         current_period_end: user.current_period_end,
       })
       .from(user)
-      .where(eq(user.id, userId));
+      .where(eq(user.id, session.user.id));
 
     const userData = users[0];
 
     if (!userData) {
-      return new NextResponse('User not found', { status: 404 });
+      return new NextResponse("User not found", { status: 404 });
     }
 
     const now = new Date();
 
     const hasActiveSubscription =
-      userData.subscription_status === 'active' &&
+      userData.subscription_status === "active" &&
       userData.current_period_end &&
       new Date(userData.current_period_end) > now;
 
@@ -72,7 +66,7 @@ export async function POST(req: Request) {
       currentPeriodEnd: userData.current_period_end,
     });
   } catch (err) {
-    console.error('Status route failed:', err);
-    return new NextResponse('Internal server error', { status: 500 });
+    console.error("Status route failed:", err);
+    return new NextResponse("Internal server error", { status: 500 });
   }
 }

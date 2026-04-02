@@ -1,4 +1,4 @@
-function requireEnv(name: string): string {
+function lazyEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
@@ -6,6 +6,14 @@ function requireEnv(name: string): string {
   return value;
 }
 
-export const STRIPE_SECRET_KEY = requireEnv('STRIPE_SECRET_KEY');
-export const STRIPE_WEBHOOK_SECRET = requireEnv('STRIPE_WEBHOOK_SECRET');
-export const APP_URL = requireEnv('NEXT_PUBLIC_APP_URL');
+export const env = {
+  get STRIPE_SECRET_KEY() {
+    return lazyEnv('STRIPE_SECRET_KEY');
+  },
+  get STRIPE_WEBHOOK_SECRET() {
+    return lazyEnv('STRIPE_WEBHOOK_SECRET');
+  },
+  get APP_URL() {
+    return lazyEnv('NEXT_PUBLIC_APP_URL');
+  },
+};

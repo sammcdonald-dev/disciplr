@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: bible-chat
+      POSTGRES_DB: disciplr
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -34,7 +34,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: bible-chat-app
+    container_name: disciplr-app
     ports:
       - "3000:3000"
     volumes:
@@ -44,7 +44,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bible-chat
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/disciplr
       REDIS_URL: redis://redis:6379
       NODE_ENV: development
       GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
