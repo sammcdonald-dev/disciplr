@@ -20,15 +20,15 @@ export const chat = pgTable('Chat', {
   // ... existing fields
   personaId: varchar('personaId', { length: 64 })
     .notNull()
-    .default('bible-chat'),
+    .default('disciplr'),
 });
 ```
 
 **Why:**
 - Each chat needs to be associated with a specific persona
-- The default value `'bible-chat'` ensures existing chats are assigned to the default persona
+- The default value `'disciplr'` ensures existing chats are assigned to the default persona
 - `NOT NULL` constraint ensures all chats have a persona assigned
-- Length of 64 characters is sufficient for persona IDs (e.g., 'bible-chat', 'moses', 'david')
+- Length of 64 characters is sufficient for persona IDs (e.g., 'disciplr', 'moses', 'david')
 
 ---
 
@@ -40,12 +40,12 @@ export const chat = pgTable('Chat', {
 - Created a new migration file to add the `personaId` column to the existing `Chat` table
 
 ```sql
-ALTER TABLE "Chat" ADD COLUMN "personaId" varchar(64) DEFAULT 'bible-chat' NOT NULL;
+ALTER TABLE "Chat" ADD COLUMN "personaId" varchar(64) DEFAULT 'disciplr' NOT NULL;
 ```
 
 **Why:**
 - Adds the new column to the database
-- Sets default value for existing rows to `'bible-chat'`
+- Sets default value for existing rows to `'disciplr'`
 - Ensures the column cannot be null
 
 ### File: `lib/db/migrations/meta/_journal.json`
@@ -396,7 +396,7 @@ if (
 ```typescript
 const chat = await getChatById({ id });
 // Use personaId from the chat (database) if available, otherwise fallback to cookie
-const personaId = chat.personaId || cookieStore.get('bible-chat')?.value || DEFAULT_BIBLE_CHAT_PERSONA_ID;
+const personaId = chat.personaId || cookieStore.get('disciplr')?.value || DEFAULT_BIBLE_CHAT_PERSONA_ID;
 
 return (
   <Chat
@@ -532,9 +532,9 @@ const setVisibilityType = (updatedVisibilityType: VisibilityType) => {
 - No manual cache invalidation needed when switching personas
 - Each persona's history is cached separately
 
-### 3. Why Default to `'bible-chat'`?
+### 3. Why Default to `'disciplr'`?
 
-**Decision:** Default `personaId` to `'bible-chat'`
+**Decision:** Default `personaId` to `'disciplr'`
 **Reason:**
 - Backward compatibility with existing chats
 - Migration sets all existing chats to default persona
@@ -597,13 +597,13 @@ const setVisibilityType = (updatedVisibilityType: VisibilityType) => {
 ```bash
 npm run db:migrate
 # Or inside Docker:
-docker exec bible-chat-app npm run db:migrate
+docker exec disciplr-app npm run db:migrate
 ```
 
 ### What Happens:
 
 1. Migration adds `personaId` column to `Chat` table
-2. All existing chats get `personaId = 'bible-chat'` (default)
+2. All existing chats get `personaId = 'disciplr'` (default)
 3. New chats will have the personaId from when they were created
 4. No data loss, all existing chats remain accessible
 
@@ -653,4 +653,3 @@ This implementation successfully separates chat histories by persona, allowing u
 4. **Caching:** Leveraged SWR's key-based caching to handle multiple persona histories
 
 The solution is scalable, efficient, and maintains backward compatibility with existing chats.
-

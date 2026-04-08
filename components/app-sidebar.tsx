@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
-import { PlusIcon } from '@/components/icons';
-import { SidebarHistory } from '@/components/sidebar-history';
-import { SidebarUserNav } from '@/components/sidebar-user-nav';
-import { Button } from '@/components/ui/button';
+import { PlusIcon } from "@/components/icons";
+import { SidebarHistory } from "@/components/sidebar-history";
+import { SidebarUserNav } from "@/components/sidebar-user-nav";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -13,17 +13,21 @@ import {
   SidebarHeader,
   SidebarMenu,
   useSidebar,
-} from '@/components/ui/sidebar';
-import { PersonSelector } from '@/components/person-selector';
-import Link from 'next/link';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import type { User, Session } from 'next-auth';
+} from "@/components/ui/sidebar";
+import { PersonSelector } from "@/components/person-selector";
+import Link from "next/link";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import type { User, Session } from "next-auth";
 
 export function AppSidebar({
   user,
   session,
   selectedPersonaId,
-}: { user: User | undefined; session: Session; selectedPersonaId: string }) {
+}: {
+  user: User | undefined;
+  session: Session | null;
+  selectedPersonaId: string;
+}) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
 
@@ -40,7 +44,7 @@ export function AppSidebar({
               className="flex flex-row gap-3 items-center"
             >
               <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
-                ✞ bible chat
+                ✞ disciplr
               </span>
             </Link>
             <Tooltip>
@@ -51,7 +55,7 @@ export function AppSidebar({
                   className="p-2 h-fit"
                   onClick={() => {
                     setOpenMobile(false);
-                    router.push('/');
+                    router.push("/");
                     router.refresh();
                   }}
                 >
@@ -68,7 +72,7 @@ export function AppSidebar({
         <div className="px-2">
           <PersonSelector
             session={session}
-            selectedPersonaId={selectedPersonaId} // in the future the default will be bible-chat
+            selectedPersonaId={selectedPersonaId} // in the future the default will be disciplr
             className="order-2"
           />
         </div>
