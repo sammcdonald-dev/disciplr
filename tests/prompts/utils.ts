@@ -177,12 +177,7 @@ export const getResponseChunksByPrompt = (
         toolCallId: toolCallId,
         type: 'tool-result',
         toolName: 'createDocument',
-        content: [
-          {
-            type: 'text',
-            text: 'I created a document about Silicon Valley for you!',
-          },
-        ],
+        result: 'I created a document about Silicon Valley for you!',
       },
       {
         type: 'finish',

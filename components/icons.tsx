@@ -24,7 +24,7 @@ export function PersonaIcon({
   selectedPersonaId,
 }: { selectedPersonaId: string }) {
   return (
-    <div className="size-14 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background object-cover">
+    <div className="size-10 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background object-cover">
       <img
         src={`/personas/${selectedPersonaId}.png`}
         width={200}

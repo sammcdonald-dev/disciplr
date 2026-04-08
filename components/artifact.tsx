@@ -315,6 +315,7 @@ function PureArtifact({
               <div className="flex flex-col h-full justify-between items-center">
                 <ArtifactMessages
                   chatId={chatId}
+                  selectedPersonaId={selectedPersonaId}
                   status={status}
                   votes={votes}
                   messages={messages}

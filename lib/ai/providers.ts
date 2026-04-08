@@ -10,33 +10,24 @@ import {
 import { isTestEnvironment } from '../constants';
 import { createFallbackLanguageModel } from './fallback-language-model';
 
-// Define the allowed model IDs
 export type LanguageModelId =
   | 'chat-model'
   | 'chat-model-reasoning'
   | 'title-model'
   | 'artifact-model';
 
-// Test mode: use mock models
-// ... existing code ...
 export const myProvider = (() => {
   if (isTestEnvironment) {
-    const base = customProvider({
-      languageModels: {
-        'chat-model': chatModel,
-        'chat-model-reasoning': reasoningModel,
-        'title-model': titleModel,
-        'artifact-model': artifactModel,
-      },
+    // Simple fallback mock provider
+    return customProvider({
+      languageModels: {},
     });
-
-    return {
-      ...base,
-      languageModel: (id: LanguageModelId) => base.languageModel(id),
-    };
   }
 
-  // ✅ Production mode with Gemini (multi-key fallback on rate limit)
+  const google = createGoogleGenerativeAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  });
+  // Production mode with Gemini (multi-key fallback on rate limit)
   const rawKeys = process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? '';
   const apiKeys = rawKeys
     .split(',')
@@ -74,7 +65,6 @@ export const myProvider = (() => {
         middleware: [],
       }),
     },
-    imageModels: {},
   });
 
   return {
