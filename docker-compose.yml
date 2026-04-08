@@ -2,16 +2,24 @@
 
 services:
   postgres:
-    image: postgres:16
+    image: ankane/pgvector
+    hostname: postgres
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: bible-chat
+      POSTGRES_DB: disciplr
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:latest
@@ -25,24 +33,28 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.dev # 👈 explicitly dev Dockerfile
-    container_name: bible-chat-app
+      dockerfile: Dockerfile.dev
+    container_name: disciplr-app
     ports:
       - "3000:3000"
     volumes:
-      - .:/app
-      - /app/node_modules # 👈 avoid overwriting node_modules
+      - .:/app:delegated
+      - /app/node_modules
+      - /app/.next
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bible-chat
-      REDIS_URL: redis://default:password@redis:6379
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/disciplr
+      REDIS_URL: redis://redis:6379
       NODE_ENV: development
       GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
+      CHOKIDAR_USEPOLLING: true
     depends_on:
-      - postgres
-      - redis
-    command: sh -c "npm run db:migrate && npm run dev"
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: sh -c "sleep 2 && npm run db:migrate && npm run dev"
 
 volumes:
   postgres_data:
