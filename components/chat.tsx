@@ -54,6 +54,7 @@ export function Chat({
     limits,
     handleChatMessage,
     handleUpgrade,
+    refetch: refetchSubscription,
   } = useSubscription();
 
   const [input, setInput] = useState<string>('');
@@ -125,6 +126,7 @@ export function Chat({
 
   const searchParams = useSearchParams();
   const query = searchParams.get('query');
+  const checkoutStatus = searchParams.get('checkout');
 
   const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
 
@@ -139,6 +141,14 @@ export function Chat({
       window.history.replaceState({}, '', `/chat/${id}`);
     }
   }, [query, sendMessage, hasAppendedQuery, id]);
+
+  useEffect(() => {
+    if (checkoutStatus === 'success') {
+      refetchSubscription();
+      toast({ type: 'success', description: 'Subscription activated! Welcome to Pro.' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [checkoutStatus, refetchSubscription]);
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,

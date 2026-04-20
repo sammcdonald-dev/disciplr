@@ -23,18 +23,18 @@ export function useSubscription() {
       // Check if user is owner (bypass)
       const ownerRes = await fetch("/api/billing/check-owner");
       const isOwner = await ownerRes.json();
-      
+
       // Get chat count from server
       const countRes = await fetch("/api/billing/chat-count");
       const chatCount = await countRes.json();
-      
+
       const freeChatsRemaining = Math.max(0, 8 - chatCount.count);
-      
+
       setLimits({
         freeChatsRemaining,
         isOwner: isOwner.isOwner
       });
-      
+
       if (isOwner.isOwner) {
         setStatus("pro");
       } else if (freeChatsRemaining > 0) {
@@ -51,7 +51,7 @@ export function useSubscription() {
   // Initialize on mount
   useEffect(() => {
     checkSubscriptionStatus();
-    
+
     // Set up polling for status changes (every 30 seconds)
     const interval = setInterval(checkSubscriptionStatus, 30000);
     return () => clearInterval(interval);
@@ -60,7 +60,7 @@ export function useSubscription() {
   // Handle chat message sent - increment counter
   const handleChatMessage = useCallback(async () => {
     if (limits.isOwner) return; // Owner doesn't count chats
-    
+
     try {
       await fetch("/api/billing/increment-chat", { method: "POST" });
       // Refresh status after increment
@@ -74,7 +74,7 @@ export function useSubscription() {
   const handleUpgrade = useCallback(async () => {
     try {
       // Redirect to Stripe checkout
-      const res = await fetch("/api/billing/checkout", { method: "POST" });
+      const res = await fetch("/api/billing/checkout", { method: "POST", body: JSON.stringify({ planId: 'monthly' }) });
       if (res.ok) {
         const { url } = await res.json();
         window.location.href = url;

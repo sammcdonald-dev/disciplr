@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   const cookieStore = await cookies();
   const ownerKey = cookieStore.get("owner-key")?.value;
   const expectedKey = process.env.OWNER_BYPASS_KEY;
-  
+
   if (expectedKey && ownerKey === expectedKey) {
     // Owner bypass - grant immediate access by resetting chat count
     // We'll create a simple response that redirects to chat
@@ -43,9 +43,11 @@ export async function POST(req: Request) {
   }
 
   let planId: string;
+  // expected plan Id's are 'monthly' and 'one_time'
   try {
     const body = await req.json();
-    planId = body.planId;
+    planId = body.planId ?? 'monthly';
+    // where do we get planId from? we should have it by now I guess
   } catch {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
@@ -86,12 +88,24 @@ export async function POST(req: Request) {
         .where(eq(user.id, userData.id));
     }
 
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const sessionParams = {
       mode: plan.isSubscription ? "subscription" : "payment",
       customer: customerId,
+      allow_promotion_codes: true,
       line_items: [{ price: plan.priceId, quantity: 1 }],
-      success_url: `${env.APP_URL}/success`,
-      cancel_url: `${env.APP_URL}/cancel`,
+      success_url: `${env.APP_URL}/?checkout=success`,
+      cancel_url: `${env.APP_URL}/`,
+    } as const;
+
+    console.log("[checkout] creating session with params:", JSON.stringify(sessionParams, null, 2));
+
+    const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
+
+    console.log("[checkout] session created:", {
+      id: checkoutSession.id,
+      allow_promotion_codes: checkoutSession.allow_promotion_codes,
+      mode: checkoutSession.mode,
+      url: checkoutSession.url,
     });
 
     return Response.json({ url: checkoutSession.url });
