@@ -10,6 +10,7 @@ import {
 import type { VisibilityType } from "@/components/visibility-selector";
 import { myProvider } from "@/lib/ai/providers";
 import type { Persona } from "@/lib/ai/personas";
+import { containsBlockedTerms } from "@/lib/utils";
 
 export async function saveChatModelAsCookie(model: string) {
   const cookieStore = await cookies();
@@ -21,7 +22,11 @@ export async function saveChatPersonaAsCookie(persona: Persona["id"]) {
   cookieStore.set("disciplr", persona);
 }
 
-export async function generateTitleFromUserMessage({ message, }: { message: UIMessage; }) {
+export async function generateTitleFromUserMessage({
+  message,
+}: {
+  message: UIMessage;
+}) {
   try {
     // Check for blocked terms before processing
     if (containsBlockedTerms(message.content)) {
@@ -57,6 +62,12 @@ export async function deleteTrailingMessages({ id }: { id: string }) {
   });
 }
 
-export async function updateChatVisibility({ chatId, visibility, }: { chatId: string; visibility: VisibilityType; }) {
+export async function updateChatVisibility({
+  chatId,
+  visibility,
+}: {
+  chatId: string;
+  visibility: VisibilityType;
+}) {
   await updateChatVisiblityById({ chatId, visibility });
 }

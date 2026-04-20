@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { auth } from "@/app/(auth)/auth";
+import { db, user } from "@/lib/db";
+import { eq, sql } from "drizzle-orm";
 
 export async function POST() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ success: false }, { status: 401 });
+  }
+
   try {
-    const cookieStore = await cookies();
-    const currentCount = parseInt(cookieStore.get("chat-count")?.value || "0", 10);
-    cookieStore.set("chat-count", (currentCount + 1).toString());
-    
-    return NextResponse.json({ success: true, count: currentCount + 1 });
+    const [updated] = await db
+      .update(user)
+      .set({ free_chat_count: sql`${user.free_chat_count} + 1` })
+      .where(eq(user.id, session.user.id))
+      .returning({ free_chat_count: user.free_chat_count });
+
+    return NextResponse.json({ success: true, count: updated?.free_chat_count ?? 0 });
   } catch (error) {
     console.error("Increment chat error:", error);
     return NextResponse.json({ success: false }, { status: 500 });

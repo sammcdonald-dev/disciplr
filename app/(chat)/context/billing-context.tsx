@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { BillingPlan } from '@/lib/billing/types';
 import type { Session } from 'next-auth';
@@ -38,7 +40,7 @@ export function BillingProvider({ children, session }: { children: React.ReactNo
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/app/(chat)/api/billing/status', {
+      const response = await fetch('/api/billing/status', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +74,7 @@ export function BillingProvider({ children, session }: { children: React.ReactNo
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/app/(chat)/api/billing/checkout', {
+      const response = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +104,7 @@ export function BillingProvider({ children, session }: { children: React.ReactNo
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/app/(chat)/api/billing/subscription/cancel', {
+      const response = await fetch('/api/billing/subscription/cancel', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,13 +126,13 @@ export function BillingProvider({ children, session }: { children: React.ReactNo
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [initializeBilling]);
 
   const updatePaymentMethod = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/app/(chat)/api/billing/portal', {
+      const response = await fetch('/api/billing/portal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

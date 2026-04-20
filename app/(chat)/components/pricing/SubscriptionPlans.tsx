@@ -27,13 +27,7 @@ export default function SubscriptionPlans() {
               className="group block cursor-pointer"
               onClick={(e) => {
                 e.preventDefault();
-                if (!plan.isSubscription) {
-                  // Handle one-time purchase
-                  subscribeToPlan(plan.id);
-                } else {
-                  // Handle subscription
-                  subscribeToPlan(plan.id);
-                }
+                subscribeToPlan(plan.id);
               }}
             >
               <Card className="h-full hover:shadow-lg transition-shadow group-hover:shadow-xl">

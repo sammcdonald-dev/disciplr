@@ -18,6 +18,7 @@
  */
 
 import { eq } from "drizzle-orm";
+import { cookies } from "next/headers";
 import { env } from "@/lib/env";
 import { auth } from "@/app/(auth)/auth";
 import { getPlanById } from "@/lib/billing/plans";
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
   if (expectedKey && ownerKey === expectedKey) {
     // Owner bypass - grant immediate access by resetting chat count
     // We'll create a simple response that redirects to chat
-    return Response.json({ url: "/app/chat" });
+    return Response.json({ url: "/" });
   }
 
   let planId: string;

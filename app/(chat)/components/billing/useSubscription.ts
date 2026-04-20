@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 // Types
-export type SubscriptionStatus = "free" | "pro" | "loading";
+export type SubscriptionStatus = "free" | "pro" | "limit_reached" | "loading";
 export type ChatLimits = {
   freeChatsRemaining: number;
   isOwner: boolean;
@@ -35,13 +35,12 @@ export function useSubscription() {
         isOwner: isOwner.isOwner
       });
       
-      // Set status based on limits
       if (isOwner.isOwner) {
-        setStatus("pro"); // Owner gets pro access
+        setStatus("pro");
       } else if (freeChatsRemaining > 0) {
-        setStatus("free"); // Free chats available
+        setStatus("free");
       } else {
-        setStatus("pro"); // Need to upgrade to continue
+        setStatus("limit_reached");
       }
     } catch (error) {
       console.error("Failed to check subscription status:", error);
@@ -115,6 +114,6 @@ export function useSubscription() {
     handleUpgrade,
     handleManageSubscription,
     resetChatCount,
-    refetch: checkSubscriptionStatus
+    refetch: checkSubscriptionStatus,
   };
 }
