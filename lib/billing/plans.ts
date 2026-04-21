@@ -22,8 +22,8 @@ export const PLANS: BillingPlan[] = [
     id: 'monthly',
     name: 'Monthly Subscription',
     description: 'Monthly access',
-    priceId: 'price_456', //TODO: replace with actual price ID
-    amount: 900,
+    priceId: 'price_1SxGkmGXlNrGSvR1yCoOVAzl', //TODO: replace with actual price ID
+    amount: 4.99,
     currency: 'usd',
     interval: 'month',
     isSubscription: true,

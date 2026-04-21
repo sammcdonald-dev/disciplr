@@ -20,6 +20,8 @@ import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { useSubscription } from '@/app/(chat)/components/billing/useSubscription';
+import { Button } from './ui/button';
 
 export function Chat({
   id,
@@ -47,6 +49,13 @@ export function Chat({
 
   const { mutate } = useSWRConfig();
   const { setDataStream } = useDataStream();
+  const {
+    status: subStatus,
+    limits,
+    handleChatMessage,
+    handleUpgrade,
+    refetch: refetchSubscription,
+  } = useSubscription();
 
   const [input, setInput] = useState<string>('');
 
@@ -103,6 +112,7 @@ export function Chat({
         undefined,
         { revalidate: true },
       );
+      handleChatMessage();
     },
     onError: (error) => {
       if (error instanceof ChatSDKError) {
@@ -116,6 +126,7 @@ export function Chat({
 
   const searchParams = useSearchParams();
   const query = searchParams.get('query');
+  const checkoutStatus = searchParams.get('checkout');
 
   const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
 
@@ -130,6 +141,14 @@ export function Chat({
       window.history.replaceState({}, '', `/chat/${id}`);
     }
   }, [query, sendMessage, hasAppendedQuery, id]);
+
+  useEffect(() => {
+    if (checkoutStatus === 'success') {
+      refetchSubscription();
+      toast({ type: 'success', description: 'Subscription activated! Welcome to Pro.' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [checkoutStatus, refetchSubscription]);
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
@@ -170,24 +189,35 @@ export function Chat({
           isArtifactVisible={isArtifactVisible}
         />
 
-        <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
-          {!isReadonly && (
-            <MultimodalInput
-              chatId={id}
-              selectedPersonaId={initialPersonaId}
-              input={input}
-              setInput={setInput}
-              status={status}
-              stop={stop}
-              attachments={attachments}
-              setAttachments={setAttachments}
-              messages={messages}
-              setMessages={setMessages}
-              sendMessage={sendMessage}
-              selectedVisibilityType={visibilityType}
-            />
-          )}
-        </form>
+        <div className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
+          {!isReadonly && subStatus === 'limit_reached' ? (
+            <div className="flex flex-col items-center gap-3 w-full p-4 rounded-2xl bg-muted text-center">
+              <p className="text-sm text-muted-foreground">
+                You&apos;ve used all {limits.freeChatsRemaining === 0 ? 8 : limits.freeChatsRemaining} free chats. Upgrade to keep the conversation going.
+              </p>
+              <Button onClick={handleUpgrade} className="w-full md:w-auto">
+                Upgrade to Pro
+              </Button>
+            </div>
+          ) : !isReadonly ? (
+            <form className="w-full">
+              <MultimodalInput
+                chatId={id}
+                selectedPersonaId={initialPersonaId}
+                input={input}
+                setInput={setInput}
+                status={status}
+                stop={stop}
+                attachments={attachments}
+                setAttachments={setAttachments}
+                messages={messages}
+                setMessages={setMessages}
+                sendMessage={sendMessage}
+                selectedVisibilityType={visibilityType}
+              />
+            </form>
+          ) : null}
+        </div>
       </div>
 
       <Artifact

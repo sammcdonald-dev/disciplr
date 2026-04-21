@@ -209,6 +209,7 @@ export async function POST(request: Request) {
       }
     }
 
+    // For unpaid logged in users check after 12 messages for payment subscription
     // For regular users, check daily message limit
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
@@ -283,6 +284,9 @@ export async function POST(request: Request) {
         },
       ],
     });
+
+
+
 
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });

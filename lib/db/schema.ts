@@ -22,6 +22,7 @@ export const user = pgTable("User", {
   subscription_status: varchar("subscription_status", { length: 64 }),
   current_period_end: timestamp("current_period_end"),
   has_lifetime_access: boolean("has_lifetime_access").default(false),
+  free_chat_count: integer("free_chat_count").notNull().default(0),
 });
 
 export const bibleVerses = pgTable("bible_verses", {
