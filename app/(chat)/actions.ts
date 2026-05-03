@@ -27,6 +27,11 @@ export async function generateTitleFromUserMessage({
   message: UIMessage;
 }) {
   try {
+    // Check for blocked terms before processing
+    if (containsBlockedTerms(message.content)) {
+      throw new Error("Message contains inappropriate content");
+    }
+    
     const { text: title } = await generateText({
       model: myProvider.languageModel("title-model"),
       system: `\n
@@ -36,7 +41,6 @@ export async function generateTitleFromUserMessage({
       - do not use quotes or colons`,
       prompt: JSON.stringify(message),
     });
-
     return title;
   } catch (error) {
     // Handle quota errors gracefully
@@ -44,7 +48,6 @@ export async function generateTitleFromUserMessage({
       console.warn("Quota exceeded for title generation, using fallback title");
       return "New Chat"; // Fallback title when quota is exceeded
     }
-
     // Re-throw other errors
     throw error;
   }
@@ -52,7 +55,6 @@ export async function generateTitleFromUserMessage({
 
 export async function deleteTrailingMessages({ id }: { id: string }) {
   const [message] = await getMessageById({ id });
-
   await deleteMessagesByChatIdAfterTimestamp({
     chatId: message.chatId,
     timestamp: message.createdAt,

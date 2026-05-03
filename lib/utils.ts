@@ -97,6 +97,21 @@ export function sanitizeText(text: string) {
   return text.replace('<has_function_call>', '');
 }
 
+const BLOCKED_TERMS = [
+  'how to make a bomb',
+  'how to make drugs',
+  'child pornography',
+  'cp porn',
+  'kill yourself',
+  'kys',
+];
+
+export function containsBlockedTerms(text: string): boolean {
+  if (typeof text !== 'string') return false;
+  const lower = text.toLowerCase();
+  return BLOCKED_TERMS.some((term) => lower.includes(term));
+}
+
 export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
   return messages.map((message) => ({
     id: message.id,
