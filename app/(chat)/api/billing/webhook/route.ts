@@ -21,22 +21,22 @@
  * Stripe retries events if we do not return HTTP 200.
  */
 
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import type Stripe from "stripe";
-import { headers } from "next/headers";
-import { env } from "@/lib/env";
-import { getStripe } from "@/lib/billing/stripe";
-import { db, user } from "@/lib/db";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { eq } from 'drizzle-orm';
+import type Stripe from 'stripe';
+import { headers } from 'next/headers';
+import { env } from '@/lib/env';
+import { getStripe } from '@/lib/billing/stripe';
+import { db, user } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const headersList = await headers();
-  const signature = headersList.get("stripe-signature");
+  const signature = headersList.get('stripe-signature');
 
   if (!signature) {
-    return new NextResponse("Missing signature", { status: 400 });
+    return new NextResponse('Missing signature', { status: 400 });
   }
 
   const stripe = getStripe();
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (err: any) {
-    console.error("Webhook signature verification failed:", err);
+    console.error('Webhook signature verification failed:', err);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
@@ -57,24 +57,27 @@ export async function POST(req: NextRequest) {
   // We'll store processed event IDs in a simple way for now
   // In production, you might want to use a dedicated table or Redis
   try {
-    const existing = await db.select().from(user).where(eq(user.stripe_customer_id, "")); // dummy query to check db connectivity
+    const existing = await db
+      .select()
+      .from(user)
+      .where(eq(user.stripe_customer_id, '')); // dummy query to check db connectivity
     // Actual idempotency check would go here - simplified for now
   } catch (dbErr) {
-    console.error("Database connectivity error:", dbErr);
-    return NextResponse.json({ error: "Database error" }, { status: 500 });
+    console.error('Database connectivity error:', dbErr);
+    return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
+      case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const customerId =
-          typeof session.customer === "string"
+          typeof session.customer === 'string'
             ? session.customer
             : session.customer?.id;
 
         if (!customerId) {
-          console.warn("No customer ID in checkout.session.completed event");
+          console.warn('No customer ID in checkout.session.completed event');
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
@@ -89,11 +92,11 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
-        if (session.mode === "subscription") {
+        if (session.mode === 'subscription') {
           try {
             const subscription = await stripe.subscriptions.retrieve(
               session.subscription as string,
-              { expand: ["items.data"] },
+              { expand: ['items.data'] },
             );
 
             const firstItem = subscription.items.data[0];
@@ -108,13 +111,13 @@ export async function POST(req: NextRequest) {
               })
               .where(eq(user.id, userData.id));
           } catch (subErr) {
-            console.error("Error retrieving subscription:", subErr);
+            console.error('Error retrieving subscription:', subErr);
             // Still return 200 to prevent Stripe retries, but log the error
             return NextResponse.json({ received: true }, { status: 200 });
           }
         }
 
-        if (session.mode === "payment") {
+        if (session.mode === 'payment') {
           await db
             .update(user)
             .set({
@@ -126,32 +129,32 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case "invoice.payment_succeeded": {
+      case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
 
         // Support both newer (invoice.parent.subscription_details) and
         // older (invoice.subscription) Stripe API versions
         const subscriptionId: string | null =
-          invoice.parent?.type === "subscription_details"
+          invoice.parent?.type === 'subscription_details'
             ? ((invoice.parent.subscription_details?.subscription as
                 | string
                 | null) ?? null)
-            : typeof (invoice as any).subscription === "string"
+            : typeof (invoice as any).subscription === 'string'
               ? (invoice as any).subscription
               : null;
 
         if (!subscriptionId) {
-          console.warn("No subscription ID in invoice.payment_succeeded event");
+          console.warn('No subscription ID in invoice.payment_succeeded event');
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
         const customerId =
-          typeof invoice.customer === "string"
+          typeof invoice.customer === 'string'
             ? invoice.customer
             : invoice.customer?.id;
 
         if (!customerId) {
-          console.warn("No customer ID in invoice.payment_succeeded event");
+          console.warn('No customer ID in invoice.payment_succeeded event');
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
@@ -159,7 +162,7 @@ export async function POST(req: NextRequest) {
           const subscription = await stripe.subscriptions.retrieve(
             subscriptionId,
             {
-              expand: ["items.data"],
+              expand: ['items.data'],
             },
           );
 
@@ -186,23 +189,23 @@ export async function POST(req: NextRequest) {
             })
             .where(eq(user.id, userData.id));
         } catch (subErr) {
-          console.error("Error retrieving subscription for invoice:", subErr);
+          console.error('Error retrieving subscription for invoice:', subErr);
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
         break;
       }
 
-      case "customer.subscription.deleted": {
+      case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
 
         const customerId =
-          typeof subscription.customer === "string"
+          typeof subscription.customer === 'string'
             ? subscription.customer
             : subscription.customer?.id;
 
         if (!customerId) {
-          console.warn("No customer ID in customer.subscription.deleted event");
+          console.warn('No customer ID in customer.subscription.deleted event');
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
@@ -220,7 +223,7 @@ export async function POST(req: NextRequest) {
         await db
           .update(user)
           .set({
-            subscription_status: "canceled",
+            subscription_status: 'canceled',
           })
           .where(eq(user.id, userData.id));
 
@@ -228,16 +231,16 @@ export async function POST(req: NextRequest) {
       }
 
       // Handle subscription updated for plan changes, etc.
-      case "customer.subscription.updated": {
+      case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
 
         const customerId =
-          typeof subscription.customer === "string"
+          typeof subscription.customer === 'string'
             ? subscription.customer
             : subscription.customer?.id;
 
         if (!customerId) {
-          console.warn("No customer ID in customer.subscription.updated event");
+          console.warn('No customer ID in customer.subscription.updated event');
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
@@ -264,7 +267,7 @@ export async function POST(req: NextRequest) {
             })
             .where(eq(user.id, userData.id));
         } catch (subErr) {
-          console.error("Error updating subscription:", subErr);
+          console.error('Error updating subscription:', subErr);
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
@@ -272,15 +275,15 @@ export async function POST(req: NextRequest) {
       }
 
       // Handle payment failed
-      case "invoice.payment_failed": {
+      case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId =
-          typeof invoice.customer === "string"
+          typeof invoice.customer === 'string'
             ? invoice.customer
             : invoice.customer?.id;
 
         if (!customerId) {
-          console.warn("No customer ID in invoice.payment_failed event");
+          console.warn('No customer ID in invoice.payment_failed event');
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
@@ -296,9 +299,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (err) {
-    console.error("Webhook handler error:", err);
+    console.error('Webhook handler error:', err);
     // Important: Return 200 to prevent Stripe from retrying indefinitely
-    # but alert on the error for investigation
+    // but alert on the error for investigation
     return NextResponse.json({ received: true }, { status: 200 });
   }
 }

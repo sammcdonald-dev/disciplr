@@ -10,7 +10,6 @@ import {
 import type { VisibilityType } from "@/components/visibility-selector";
 import { myProvider } from "@/lib/ai/providers";
 import type { Persona } from "@/lib/ai/personas";
-import { containsBlockedTerms } from "@/lib/utils";
 
 export async function saveChatModelAsCookie(model: string) {
   const cookieStore = await cookies();

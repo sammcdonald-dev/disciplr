@@ -64,13 +64,6 @@
       "when": 1748200000000,
       "tag": "0008_add_billing_and_bible_verses",
       "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1776390535436,
-      "tag": "0009_ordinary_amphibian",
-      "breakpoints": true
     }
   ]
 }
