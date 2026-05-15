@@ -188,6 +188,11 @@ export function Chat({
             />
           )}
         </form>
+
+        <p className="text-center text-xs text-muted-foreground pb-4">
+          Disciplr uses AI and may make mistakes. Always verify 
+          responses against Scripture and trusted biblical sources.
+        </p>
       </div>
 
       <Artifact
